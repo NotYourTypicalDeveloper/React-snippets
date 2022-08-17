@@ -3,7 +3,7 @@
 import { SimpleGrid } from '@chakra-ui/react';
 import CollectionCardMain from '@components/molecules/cards/CollectionCardMain';
 import { ICollectionSingle } from '@typeDefs/shopifyData/collection';
-import { addMetric } from '@helpers/tinyHelpers';
+import { makeRelativeUrl, addMetric } from '@helpers/tinyHelpers';
 
 interface collectionGridProps {
   collectionData: ICollectionSingle;
@@ -11,6 +11,7 @@ interface collectionGridProps {
 
 const CollectionGrid = ({ collectionData }: collectionGridProps) => {
   const productsArr = collectionData.collection.products.edges;
+  console.log('COLLECTION DATA => ', collectionData);
 
   // Get all available products
   const productsAvailable = productsArr.filter(
@@ -20,15 +21,13 @@ const CollectionGrid = ({ collectionData }: collectionGridProps) => {
   // Display the cards
   const collectionCardsAvailable = productsAvailable.map((elem) => {
     const { title, onlineStoreUrl } = elem.node;
-    const innerLegMeasurement = elem.node.metafield?.value;
-    const innerLegFmt =
-      innerLegMeasurement && addMetric(innerLegMeasurement, 'cm');
-    const { url, altText } = elem.node.featuredImage;
+    const innerLeg = elem.node.metafield?.value;
+    const innerLegFmt = innerLeg && addMetric(innerLeg, 'cm');
+    const { url: imgUrl, altText } = elem.node.featuredImage;
+    const relativeUrl = onlineStoreUrl && makeRelativeUrl(onlineStoreUrl);
 
     // Get the highest price of the product
     const variantsArr = elem.node.variants.edges;
-    console.log('VARIANTS ARRAY FOR ', title, variantsArr);
-
     const pricesArr = [];
 
     variantsArr.forEach((elem) => {
@@ -39,17 +38,15 @@ const CollectionGrid = ({ collectionData }: collectionGridProps) => {
     const maxPrice = `£${Math.max(...pricesArr)}`;
 
     return (
-      innerLegMeasurement && (
-        <CollectionCardMain
-          key={title}
-          title={title}
-          imageSrc={url}
-          imageAlt={altText}
-          maxPrice={maxPrice}
-          innerLeg={innerLegFmt}
-          onlineStoreUrl={onlineStoreUrl}
-        />
-      )
+      <CollectionCardMain
+        key={title}
+        title={title}
+        imageSrc={imgUrl}
+        imageAlt={altText ? altText : 'product image'}
+        maxPrice={maxPrice}
+        innerLeg={innerLeg ? innerLegFmt : ''}
+        onlineStoreUrl={relativeUrl ? relativeUrl : '#'}
+      />
     );
   });
 
