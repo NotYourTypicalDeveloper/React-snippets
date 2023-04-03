@@ -15,7 +15,7 @@ import MagnifierIcon from '@components/atoms/icons-logos/MagnifierIcon';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { useState } from 'react';
 
-export interface IPDPImageCarousel {
+export interface IPDPImageCarouselV2 {
   productName: string;
   activeImage: IBasicImage | null;
   lifestyleImages: IBasicImage[] | null;
@@ -26,12 +26,13 @@ interface IZoomControls {
   resetTransform: () => void;
   imageKey: string;
 }
-const PDPImageCarousel = ({
+const PDPImageCarouselV2 = ({
   productName,
   activeImage,
   lifestyleImages,
-}: IPDPImageCarousel) => {
+}: IPDPImageCarouselV2) => {
   const [isZoomActive, setZoomActive] = useState<boolean>(false);
+  const [currentImageKey, setCurrentImageKey] = useState('');
 
   const imageWidth = activeImage?.width || 1024;
   const imageHeight = activeImage?.height || 768;
@@ -56,6 +57,7 @@ const PDPImageCarousel = ({
         zIndex={1}
         onClick={() => {
           setZoomActive(true);
+          setCurrentImageKey(imageKey);
           zoomIn();
         }}
       />
@@ -68,6 +70,7 @@ const PDPImageCarousel = ({
         right={2}
         top={2}
         zIndex={1}
+        visibility={isZoomActive === false ? 'hidden' : 'visible'}
         onClick={() => {
           setZoomActive(false);
           resetTransform();
@@ -83,8 +86,12 @@ const PDPImageCarousel = ({
     const imageKey = `${productName}${index + 1}`;
     if (imgURL) {
       return (
-        <Slide key={imageKey} index={index}>
-          <TransformWrapper maxScale={2} wheel={{ disabled: true }}>
+        <Slide key={`${imageKey}-${imgAltText}`} index={index}>
+          <TransformWrapper
+            maxScale={2}
+            wheel={{ disabled: true }}
+            panning={{ disabled: isZoomActive ? false : true }}
+          >
             {(utils) => (
               <>
                 <ZoomControls {...utils} imageKey={imageKey} />
@@ -97,8 +104,6 @@ const PDPImageCarousel = ({
                     alt={imgAltText || `image of ${productName}`}
                     objectFit="contain"
                     layout="fill"
-                    width={1024}
-                    height={768}
                   />
                 </TransformComponent>
               </>
@@ -117,20 +122,27 @@ const PDPImageCarousel = ({
     }
   });
 
-  const trackingDots = allImages.map((item, index) => (
-    <Dot key={`dot-${index}`} slide={index}>
-      <Circle
-        size={{ base: '2', lg: '4' }}
-        bg="bcDeepPurple.100"
-        mr={{ base: '2', lg: '4' }}
-        sx={{
-          '.carousel__dot--selected &': {
-            backgroundColor: 'bcDeepPurple.700',
-          },
-        }}
-      ></Circle>
-    </Dot>
-  ));
+  const trackingDots = allImages.map((item, index) => {
+    const imageKey = `${productName}${index + 1}`;
+    return (
+      <Dot
+        key={`dot-${index}`}
+        slide={index}
+        onClick={() => resetSlide(imageKey)}
+      >
+        <Circle
+          size={{ base: '2', lg: '4' }}
+          bg="bcDeepPurple.100"
+          mr={{ base: '2', lg: '4' }}
+          sx={{
+            '.carousel__dot--selected &': {
+              backgroundColor: 'bcDeepPurple.700',
+            },
+          }}
+        ></Circle>
+      </Dot>
+    );
+  });
 
   // miniature thumbnails
   const imageThumbnails = allImages.map((image, index) => {
@@ -191,7 +203,7 @@ const PDPImageCarousel = ({
         naturalSlideHeight={imageHeight || 768}
         totalSlides={allImages.length}
         infinite={true}
-        dragEnabled={false}
+        dragEnabled={isZoomActive ? false : true}
       >
         {/* Product image container */}
         <Box
@@ -210,7 +222,7 @@ const PDPImageCarousel = ({
               transform="translate(0, 50%)"
               zIndex={1}
             >
-              <ButtonBack>
+              <ButtonBack onClick={() => resetSlide(currentImageKey)}>
                 <ChevronLeftIcon
                   color="bcDeepPurple.700"
                   boxSize={10}
@@ -234,7 +246,7 @@ const PDPImageCarousel = ({
               transform="translate(0, 50%)"
               zIndex={1}
             >
-              <ButtonNext>
+              <ButtonNext onClick={() => resetSlide(currentImageKey)}>
                 <ChevronRightIcon
                   bg="whiteAlpha.800"
                   borderRadius="50%"
@@ -266,4 +278,4 @@ const PDPImageCarousel = ({
   );
 };
 
-export default PDPImageCarousel;
+export default PDPImageCarouselV2;
